@@ -1,0 +1,184 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        420,
+        -160
+      ],
+      "id": "a9bf4023-c58e-483c-bafd-08c99d4703f4",
+      "webhookId": "9237f5e0-589f-4053-82b2-09ca553cccb9",
+      "credentials": {
+        "telegramApi": {
+          "id": "Cc1EqmpEq4wYJePl",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Complete fixed version with all variables defined\nconst message = $input.first()?.json?.message?.text?.toLowerCase() || \"\";\n\n// 1. First define the base country map\nconst countryMap = {\n  // Standard countries\n  'india': 'in', 'indian': 'in', 'in': 'in', 'bharat': 'in',\n  'japan': 'jp', 'japanese': 'jp', 'jp': 'jp', 'nihon': 'jp',\n  'us': 'us', 'usa': 'us', 'america': 'us', 'united states': 'us',\n  'uk': 'gb', 'britain': 'gb', 'england': 'gb', 'united kingdom': 'gb',\n  'canada': 'ca', 'canadian': 'ca', 'ca': 'ca',\n  'australia': 'au', 'aus': 'au', 'oz': 'au',\n  'germany': 'de', 'deutschland': 'de', 'german': 'de',\n  'france': 'fr', 'french': 'fr', 'paris': 'fr',\n  'china': 'cn', 'chinese': 'cn', 'beijing': 'cn',\n  \n  // Middle East additions\n  'iran': 'ir', 'persian': 'ir', 'tehran': 'ir',\n  'israel': 'il', 'jerusalem': 'il', 'tel aviv': 'il',\n  'palestine': 'ps', 'gaza': 'ps', 'west bank': 'ps'\n};\n\n// 2. Special conflict cases\nconst conflictKeywords = {\n  'iran israel': { topic: 'war', countries: ['ir', 'il'] },\n  'israel iran': { topic: 'war', countries: ['il', 'ir'] },\n  'middle east': { topic: 'war', countries: ['il', 'ir', 'sy', 'iq'] },\n  'gaza': { topic: 'war', countries: ['ps', 'il'] }\n};\n\n// 3. Topic mapping\nconst topicMap = {\n  'tech': 'technology', 'technology': 'technology', 'computer': 'technology',\n  'business': 'business', 'finance': 'business', 'economy': 'business',\n  'sports': 'sports', 'sport': 'sports', 'football': 'sports', 'cricket': 'sports',\n  'entertainment': 'entertainment', 'movie': 'entertainment', 'bollywood': 'entertainment',\n  'health': 'health', 'medical': 'health', 'hospital': 'health',\n  'science': 'science', 'space': 'science', 'physics': 'science',\n  'war': 'war', 'conflict': 'war', 'attack': 'war', 'military': 'war'\n};\n\n// --- Processing Logic --- //\n\n// Check for conflicts first\nlet detectedConflict = null;\nfor (const [term, data] of Object.entries(conflictKeywords)) {\n  if (message.includes(term)) {\n    detectedConflict = data;\n    break;\n  }\n}\n\nif (detectedConflict) {\n  return [{\n    json: {\n      topic: detectedConflict.topic,\n      country: detectedConflict.countries.join(','),\n      isConflict: true,\n      originalMessage: message\n    }\n  }];\n}\n\n// Normal detection\nlet country = 'us';\nlet topic = 'general';\n\n// Country detection\nconst words = message.split(/\\s+/);\nfor (const word of words) {\n  if (countryMap[word]) {\n    country = countryMap[word];\n    break;\n  }\n}\n\n// Topic detection\nfor (const [keyword, category] of Object.entries(topicMap)) {\n  if (message.includes(keyword)) {\n    topic = category;\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    topic,\n    country,\n    isConflict: false,\n    originalMessage: message\n  }\n}];"
+      },
+      "name": "Detect Topic & Country",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        620,
+        -160
+      ],
+      "id": "7e6cfc96-55cb-4c63-8759-30bd3e1091b2"
+    },
+    {
+      "parameters": {
+        "url": "https://gnews.io/api/v4/top-headlines",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "topic",
+              "value": "=={{$node[\"Detect Topic & Country\"].json[\"topic\"]}}"
+            },
+            {
+              "name": "country",
+              "value": "=={{ !$node['Detect Topic & Country'].json['isConflict'] ? $node['Detect Topic & Country'].json['country'] : '' }}"
+            },
+            {
+              "name": "lang",
+              "value": "en"
+            },
+            {
+              "name": "apikey",
+              "value": "caef4e794d12adedd44bcf4b25b860e1"
+            },
+            {
+              "name": "max",
+              "value": "5"
+            },
+            {
+              "name": "cache",
+              "value": "=\"={{Date.now()}}"
+            },
+            {
+              "name": "q",
+              "value": "=\"={{ ($node['Detect Topic & Country'].json['isConflict'] ? $node['Detect Topic & Country'].json['country'].split(',').map(c => `country:${c}`).join(' OR ') : '') + ' ' + $node['Detect Topic & Country'].json['topic'] }}\""
+            },
+            {
+              "name": "sortby",
+              "value": "publishedAt"
+            },
+            {
+              "name": "cache",
+              "value": "={{Date.now()}}"
+            }
+          ]
+        }
+      },
+      "name": "GNews API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        820,
+        -160
+      ],
+      "id": "e7858398-0c60-4873-8109-8ca4d96620c3"
+    },
+    {
+      "parameters": {
+        "functionCode": "const articles = $input.first().json.articles;\nconst metadata = $node[\"Detect Topic & Country\"].json;\n\n// Get country name for display\nconst countryNames = {\n  'in': 'India', 'jp': 'Japan', 'us': 'USA', \n  'gb': 'UK', 'ca': 'Canada', 'au': 'Australia',\n  'de': 'Germany', 'fr': 'France', 'cn': 'China'\n};\n\nif (!articles || articles.length === 0) {\n  return [{ json: { \n    response: `❌ No ${metadata.topic} news found for ${countryNames[metadata.country] || metadata.country}.\\nTry: \"news in india\" or \"tech japan\"` \n  }}];\n}\n\nlet response = `🌎 *${metadata.topic.toUpperCase()} NEWS - ${countryNames[metadata.country] || metadata.country.toUpperCase()}*\\n\\n`;\n\narticles.forEach((article, index) => {\n  const date = new Date(article.publishedAt).toLocaleDateString();\n  response += `📌 *${article.title}*\\n`;\n  response += `📡 ${article.source.name} | 📅 ${date}\\n`;\n  response += `${article.description || ''}\\n`;\n  response += `🔗 [Read More](${article.url})\\n\\n`;\n});\n\nreturn [{ json: { response } }];"
+      },
+      "name": "Format News",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        -160
+      ],
+      "id": "c8501b6d-490b-4e71-97ee-1f99eb56dd77"
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger\"].json[\"message\"][\"chat\"][\"id\"]}}",
+        "text": "={{$node[\"Format News\"].json[\"response\"]}}",
+        "additionalFields": {}
+      },
+      "name": "Telegram Send Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        -160
+      ],
+      "id": "71ecd6b9-6c63-4621-b8c3-1d323d40ffe0",
+      "webhookId": "d52867ef-b779-4d5b-ae4f-957534f68329",
+      "credentials": {
+        "telegramApi": {
+          "id": "Cc1EqmpEq4wYJePl",
+          "name": "Telegram account 2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Detect Topic & Country",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Topic & Country": {
+      "main": [
+        [
+          {
+            "node": "GNews API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GNews API": {
+      "main": [
+        [
+          {
+            "node": "Format News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format News": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "7b5a4f2c9956bea19eeb100a2ee087c514a66a84b6e9381afee6a12aab702bcf"
+  }
+}
