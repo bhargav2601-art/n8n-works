@@ -1,0 +1,320 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "updates": [
+            "message"
+          ],
+          "additionalFields": {}
+        },
+        "type": "n8n-nodes-base.telegramTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -784,
+          96
+        ],
+        "id": "22b991fe-c414-490d-b8d6-7c3fa90c504d",
+        "name": "Telegram Trigger",
+        "webhookId": "72864a97-255e-4455-b051-d603c720d550",
+        "credentials": {
+          "telegramApi": {
+            "id": "A1ijvdNmVDLQfuxt",
+            "name": "Telegram account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.message.voice }}",
+                      "rightValue": "",
+                      "operator": {
+                        "type": "object",
+                        "operation": "exists",
+                        "singleValue": true
+                      },
+                      "id": "dc748b13-d03b-428d-b69a-4aa0de33f0a4"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "voice"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ecf7b5f8-af5e-4928-8320-c00a4636dc5a",
+                      "leftValue": "={{ $json.message.text }}",
+                      "rightValue": "",
+                      "operator": {
+                        "type": "string",
+                        "operation": "exists",
+                        "singleValue": true
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "text"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -576,
+          64
+        ],
+        "id": "489e2b91-1bba-4fd9-9d4a-2237fcce1d82",
+        "name": "Switch"
+      },
+      {
+        "parameters": {
+          "resource": "file",
+          "fileId": "={{ $json.message.voice.file_id }}",
+          "additionalFields": {}
+        },
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          -384,
+          32
+        ],
+        "id": "95620ec3-d77c-4c66-81fd-0790c9e189ac",
+        "name": "Get a file",
+        "webhookId": "b23892ab-cca1-49f6-8e41-2b757e5b9d18",
+        "credentials": {
+          "telegramApi": {
+            "id": "A1ijvdNmVDLQfuxt",
+            "name": "Telegram account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "audio",
+          "operation": "transcribe",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 1.8,
+        "position": [
+          -144,
+          16
+        ],
+        "id": "64db1ec9-a003-4ea8-a08a-5898618f0d9a",
+        "name": "Transcribe a recording",
+        "credentials": {
+          "openAiApi": {
+            "id": "IY2n25oMD2vAeRpi",
+            "name": "OpenAi account 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.2,
+        "position": [
+          112,
+          64
+        ],
+        "id": "498bb2a7-5eee-484f-9b99-d621871ef0b7",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4.1-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          -48,
+          272
+        ],
+        "id": "7938784b-2ced-47e2-80d3-74874513ae4e",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "lyVc3VRU41WMbxEA",
+            "name": "n8n free OpenAI API credits"
+          }
+        }
+      },
+      {
+        "parameters": {},
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3,
+        "position": [
+          112,
+          272
+        ],
+        "id": "8e250aa0-3154-4e3c-adc1-0b249aa85a92",
+        "name": "Simple Memory"
+      },
+      {
+        "parameters": {
+          "additionalFields": {}
+        },
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          448,
+          64
+        ],
+        "id": "1a070848-9db6-4c91-8e9e-10c970cccb81",
+        "name": "Send a text message",
+        "webhookId": "28aa809b-6543-4f7a-b384-a97368989395",
+        "credentials": {
+          "telegramApi": {
+            "id": "A1ijvdNmVDLQfuxt",
+            "name": "Telegram account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -336,
+          288
+        ],
+        "id": "b619f140-000e-48e1-9b73-b6a3bfd3918f",
+        "name": "Edit Fields"
+      }
+    ],
+    "connections": {
+      "Telegram Trigger": {
+        "main": [
+          [
+            {
+              "node": "Switch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "node": "Get a file",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get a file": {
+        "main": [
+          [
+            {
+              "node": "Transcribe a recording",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Transcribe a recording": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Send a text message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Simple Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {},
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "9beab74b6b90938bf44c3fda2770119a8419805af988ab30e2d6e88067c86f8d"
+    }
+  }
